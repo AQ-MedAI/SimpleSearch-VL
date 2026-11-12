@@ -5,8 +5,14 @@
 
 **Evidence-Verified SFT · Factorized Adaptive Rollout · Self-Summarized Visit**
 
-[![Hugging Face](https://img.shields.io/badge/HuggingFace-fcd022?style=for-the-badge&logo=huggingface&logoColor=000)](https://huggingface.co/SimpleSearch-VL)
-[![ModelScope](https://img.shields.io/badge/ModelScope-624aff?style=for-the-badge)](https://www.modelscope.cn/models/dmmm997/SimpleSearch-VL-30B-A3B)
+[![Paper](https://img.shields.io/badge/Paper-arXiv-A42C25?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2606.31504)
+
+[![SFT-5K dataset on ModelScope](https://img.shields.io/badge/Dataset-SFT--5K-2563EB?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgNCAxOCA0IDE4IDBWNU0zIDEyYzAgNCAxOCA0IDE4IDAiLz48L3N2Zz4%3D&logoColor=white)](https://www.modelscope.cn/datasets/dmmm997/SimpleSearch-VL-SFT-5K)
+[![RL-2K dataset on ModelScope](https://img.shields.io/badge/Dataset-RL--2K-2563EB?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgNCAxOCA0IDE4IDBWNU0zIDEyYzAgNCAxOCA0IDE4IDAiLz48L3N2Zz4%3D&logoColor=white)](https://www.modelscope.cn/datasets/dmmm997/SimpleSearch-VL-RL-2K)
+[![Evaluation dataset on ModelScope](https://img.shields.io/badge/Dataset-Evaluation-2563EB?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgNCAxOCA0IDE4IDBWNU0zIDEyYzAgNCAxOCA0IDE4IDAiLz48L3N2Zz4%3D&logoColor=white)](https://www.modelscope.cn/datasets/dmmm997/SimpleSearch-VL-EvalData)
+
+[![8B weights on ModelScope](https://img.shields.io/badge/Weights-8B-059669?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtMTIgMiAxMCA1djEwbC0xMCA1LTEwLTVWN1ptMCAxMEwyIDdtMTAgNUwyMiA3TTEyIDEydjEwIi8%2BPC9zdmc%2B&logoColor=white)](https://www.modelscope.cn/models/dmmm997/SimpleSearch-VL-8B)
+[![30B-A3B weights on ModelScope](https://img.shields.io/badge/Weights-30B--A3B-059669?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtMTIgMiAxMCA1djEwbC0xMCA1LTEwLTVWN1ptMCAxMEwyIDdtMTAgNUwyMiA3TTEyIDEydjEwIi8%2BPC9zdmc%2B&logoColor=white)](https://www.modelscope.cn/models/dmmm997/SimpleSearch-VL-30B-A3B)
 
 
 </div>
@@ -27,12 +33,6 @@ With Qwen3-VL backbones, SimpleSearch-VL obtains strong performance across six m
 - **Strong benchmark results**: SimpleSearch-VL-30B-A3B **outperforms agentic Gemini-3-Pro** on MMSearch, MMSearch+, BrowseComp-VL, FVQA, and LiveVQA.
 
 ![SimpleSearch-VL workflow](figs/markov_vis.jpg)
-
-## 📰 News
-
-- **2026-06-22**: Cache release to reduce API cost when reproducing and re-evaluating our results.
-- **2026-06-21**: Code, model weights, training data, and evaluation data release. If this project helps you, please consider giving us a 🌟.
-- **2026-06-20**: Paper release.
 
 ## 📁 Repository Layout
 
@@ -118,22 +118,9 @@ The shared launcher always supplies an accuracy-judge callback: setting the accu
 
 Real `.env` files, `config/local/`, `*.local.yaml`, data, weights and runtime caches are ignored by Git. An ignore rule is not a secret scanner and does not remove already tracked files or historical secrets. Check the files you intend to publish yourself. Training outputs, snapshots, signed image URLs and retrieval traces may also contain private information; do not publish them without a separate review.
 
-### Private configs and offline preflight
+### Custom configs
 
-The five templates are documented in `rllm/simple_agentic_search/config/README.md`. Copy the one you need into `config/local/`, edit it, then check it without starting Ray, loading weights, creating snapshots, or contacting any service:
-
-```bash
-cd "$PROJECT_ROOT/rllm"
-mkdir -p simple_agentic_search/config/local
-cp simple_agentic_search/config/eval_apimodel.yaml simple_agentic_search/config/local/eval_api.yaml
-# Fill agent_model_api.base_url and model in the copied YAML, and AGENT_API_KEY in .env.
-bash simple_agentic_search/run/run.sh --check simple_agentic_search/config/local/eval_api.yaml
-
-# Maintainer check: validate public template structure without credentials/data/weights.
-python -m simple_agentic_search.config_validation --template simple_agentic_search/config/eval_apimodel.yaml
-```
-
-Preflight checks duplicate YAML keys, inline credential fields, API settings, required service variables, judge-list alignment, concurrency/timeouts, and required JSONL/checkpoint paths. It does **not** verify network access, permissions, API compatibility, remote model availability, GPU memory, JSONL schema, or image-file references. Normal launches run the same checks automatically. Extra Hydra overrides may use single values; sweeps/deletion overrides are not supported by this release launcher.
+See the [configuration guide](rllm/simple_agentic_search/config/README.md) for templates and parameter details. Copy a template into `rllm/simple_agentic_search/config/local/` (ignored by Git), customize it for your environment, and use your YAML file for training or evaluation.
 
 ## 📂 Data Layout
 
@@ -316,22 +303,6 @@ SimpleSearch-VL also supports a `zoom_in` visual inspection tool, which can be e
 
 The image-search cache is region-aware: cached image-search results are reused only when the same image content and a sufficiently overlapping bounding box are found. This keeps reverse-image search specific to the visual evidence while reducing repeated external calls.
 
-## 💾 Cache
-
-This README does not currently provide a downloadable cache URL; a prepopulated cache is **not required**. The SQLite cache is created on demand. All five YAML templates use this path, relative to `rllm/`:
-
-```text
-simple_agentic_search/cache/mars_cache.db
-```
-
-`run.sh` exports `tools_config.cache_db_path` as `CACHE_DB_PATH`. Set a different path in your private YAML to isolate experiments. `use_cache: true` does **not** mean fully offline operation: missing region-search results still require online retrieval, and cached search results can still lack cached thumbnail bytes.
-
-**Thumbnail network defaults:** all five public templates enable `use_thumbnails: true` and `thumbnail_online_download: true`. Every worker executing `image_search` is expected to access returned image URLs **directly over HTTP(S)**; no thumbnail relay service is required. Cached thumbnail bytes are reused first, and only missing thumbnails are downloaded. The default `thumbnail_trust_env: false` ignores environment proxy settings for these downloads.
-
-A proxy/relay is only an optional workaround for restricted networks. If needed, set `thumbnail_trust_env: true` in your private YAML and configure your own `HTTP_PROXY`/`HTTPS_PROXY` (or `ALL_PROXY`, with `NO_PROXY` as needed) on every worker. This setting is specific to thumbnail requests; it does not configure other tool/API traffic. No relay is automatically configured. To prohibit thumbnail downloads, set `thumbnail_online_download: false`; cached thumbnails can still be used, but uncached ones will be missing. Failed downloads also leave textual search results available without the failed thumbnails, which can affect training/evaluation results. Timeout and image-size settings are documented beside the YAML parameters and in `rllm/simple_agentic_search/config/README.md`.
-
-Generated databases, journals, snapshots and retrieval traces must remain local unless independently reviewed for privacy and redistribution rights. The cache directory is ignored by Git.
-
 ## 🔎 Visualization
 This case shows **multi-image, region-level image search** in action. The agent rejects weak matches from `img_idx=0`, switches to `img_idx=1`, finds a CNBC result about a United Airlines simulator, and verifies the facility and location with webpage and text evidence.
 
@@ -346,4 +317,16 @@ SimpleSearch-VL builds on Qwen3-VL and prior work on multimodal agentic search a
 
 ## 📄 Citation
 
-A paper URL and BibTeX entry are not provided in this checkout. Use confirmed publication metadata when citing the paper; do not infer it from placeholder links.
+If you use SimpleSearch-VL, please cite our [paper](https://arxiv.org/abs/2606.31504):
+
+```bibtex
+@misc{dai2026simplesearchvlsimplerecipemultimodal,
+      title={SimpleSearch-VL: A Simple Recipe for Multimodal Agentic Deep Search},
+      author={Ming Dai and Zhihong Lu and Jinjie Gu and Jiedong Zhuang and Yefeng Liu and Wankou Yang and Jian Wang and Chunhua Shen},
+      year={2026},
+      eprint={2606.31504},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2606.31504},
+}
+```
