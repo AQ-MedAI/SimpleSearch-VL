@@ -1,0 +1,233 @@
+# ============================================================
+# Experiment config: remote API evaluation (no local model or Ray cluster)
+# From the rllm directory, after filling a private copy and .env:
+#   bash simple_agentic_search/run/run.sh --check simple_agentic_search/config/local/eval_api.yaml
+#   bash simple_agentic_search/run/run.sh simple_agentic_search/config/local/eval_api.yaml
+# ============================================================
+
+# --- Experiment metadata ---
+project_name: eval
+exp_name: api_model_eval
+model_path: ""  # Not used for API evaluation; no local weights are loaded.
+
+# --- Agent model API (OpenAI-compatible Chat Completions; eval only) ---
+# Fill base_url and model in a private copy. Never put credentials in YAML.
+# Credentials are read at runtime from the named environment variable.
+agent_model_api:
+  enable: true
+  base_url: ""                  # Required: your endpoint, including its API prefix (often /v1).
+  model: ""                     # Required: model ID served by that endpoint.
+  api_key: ""                   # Must remain empty; nonempty values are rejected.
+  api_key_env: AGENT_API_KEY     # Variable name, NOT the credential itself.
+  allow_unauthenticated: false   # True only for an endpoint you know requires no authentication.
+  api_retries: 3
+  sampling_params: {}            # Provider-specific options are opt-in, not portable defaults.
+
+# --- Data (API eval does not load a train split) ---
+train_data: []
+test_data:
+  - ../data/SimpleSearch-VL/Evaluation/browsecomp_vl/browsecomp_vl.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/mmsearch_plus/mmsearch_plus.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/fvqa_test/fvqa_test.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/livevqa_research_preview/livevqa_research_preview.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/simplevqa_en/simplevqa_en.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/mmsearch_end2end_only_image/mmsearch_end2end_only_image.jsonl
+
+# --- Mode ---
+mode: eval             # train | eval
+rollout_mode: async
+rollout_name: sglang
+
+# --- Algorithm (shared launcher fields; not used by API eval) ---
+dtype: bfloat16
+adv_estimator: rloo
+kl_coef: 0.001
+use_kl_loss: false
+kl_loss_coef: 0.001
+clip_ratio_high: 0.28
+loss_agg_mode: seq-mean-token-sum
+
+# --- API concurrency (single process; no multi-node batch scaling) ---
+train_prompt_bsz: 32
+val_batch_size: 4096
+n_resp_per_prompt: 1     # eval: 1 response per prompt
+train_prompt_mini_bsz: 32
+n_parallel_tasks: 4  # Start small; raise only within your provider quota.
+n_parallel_tools: 8
+
+# --- Length ---
+max_prompt_length: 4096
+max_response_length: 64000
+use_dynamic_bsz: true
+actor_ppo_max_token_len_per_gpu: 70000
+infer_ppo_max_token_len_per_gpu: 70000
+
+# --- Parallel / offload (shared schema only; no local GPU used by API eval) ---
+offload: false
+gen_tp: 2
+train_tp: 2
+train_pp: 2
+train_ep: 1
+train_etp: 1
+train_cp: 1
+
+# --- Sampling (shared launcher fields; train sampling is unused) ---
+temperature: 0.9
+top_p: 1.0
+top_k: -1
+presence_penalty: 1.1
+repetition_penalty: 1.0
+
+# --- Sampling (val / eval) ---
+val_temperature: 0.0
+val_top_p: 1.0
+val_top_k: -1
+val_presence_penalty: 0.0
+val_repetition_penalty: 1.0
+
+# --- Trainer ---
+total_epochs: 1
+total_training_steps: 1
+save_freq: 0
+test_freq: 0
+val_before_train: true
+n_gpus_per_node: 0  # API eval bypasses the local trainer.
+nnodes: 1
+logger: '["console"]'
+
+# --- Local rollout engine (shared launcher fields; unused by API eval) ---
+gpu_memory_utilization: 0.65
+enforce_eager: true
+
+# --- Actor optimizer ---
+# Retained for the shared trainer schema; evaluation does not update weights.
+lr: 2.0e-6
+lr_warmup_steps_ratio: 0.05
+lr_decay_style: cosine
+min_lr: 2.0e-7
+
+# --- Agent config ---
+agent_config:
+  # If true, prepend a scripted whole-image image_search step before the first model call.
+  image_search_first: false
+  max_llm_calls: 10
+  max_repeat_turn: 3
+  tool_max_retries: 1
+  max_prompt_tokens: 64000
+  max_response_tokens: 2048
+  tool_call_timeout: 180
+  llm_call_timeout: 300
+  llm_max_retries: 2
+  agent_run_timeout: 600
+  force_final_answer_timeout: 180
+
+# Hard per-sample limit, including agent execution and reward computation.
+workflow_timeout: 1200
+
+# --- Tools config ---
+tools_config:
+  # Available: text_search, image_search, zoom_in, visit
+  # zoom_in stays disabled by default; add it here to expose cropped images to the model.
+  enabled_tools:
+    - text_search
+    - image_search
+    - visit
+    # - zoom_in
+
+  # Batched tool argument budgets. The harness warns on over-budget calls and
+  # reward.tool_contract_penalty applies a lightweight format penalty.
+  search_max_queries: 3
+  search_max_urls: 5           # displayed results per query
+  search_cache_max_urls: 10    # cached results per query; display is sliced by search_max_urls
+  visit_max_urls: 5
+
+  extract_max_tokens: 1024
+  extract_mode: text           # text | vl
+  api_max_retries: 1
+  visit_max_content_chars: 100000
+  cache_db_path: simple_agentic_search/cache/mars_cache.db
+
+  # Zoom-in is configured but not enabled above by default.
+  zoom_in:
+    max_bboxes: 3
+    padding: [0.2, 0.2]
+
+  # Region/image search config. Offline file cache fields are intentionally omitted.
+  image_search:
+    mode: online               # online only for current harness
+    use_cache: true            # true: SQLite cache first; false: always online/no cache
+    cached_iou_threshold: 0.7
+    max_bboxes: 3              # max bbox regions per image_search call
+    max_search_results: 5      # image search result count shown to the agent
+    use_thumbnails: true      # Include available result thumbnails as visual evidence.
+    # Public default: every worker running this tool can directly access returned
+    # image URLs over HTTP(S). No thumbnail relay service is required.
+    # Read cached thumbnail bytes first; download only missing thumbnails, even
+    # when the region-search results themselves were already cached.
+    # false: use cached thumbnails only; this does NOT make image search offline.
+    # Failed/missing thumbnails are skipped; textual search results are retained.
+    thumbnail_online_download: true
+    thumbnail_download_timeout: 10.0  # HTTP client network timeout, in seconds.
+    thumbnail_max_bytes: 5242880      # 5 MiB; reject larger images AFTER download.
+    # false: direct HTTP(S), without inheriting environment proxy settings.
+    # Restricted networks only: set true to use your own HTTP_PROXY/HTTPS_PROXY
+    # (or ALL_PROXY, with NO_PROXY as needed) on each worker. No automatic relay.
+    # This flag applies only to thumbnail downloads, not other tool/API requests.
+    thumbnail_trust_env: false
+
+# --- Image pixel limits (env vars, read by run.sh) ---
+max_pixels: 8294400
+min_pixels: 65536
+
+# --- Reward config (eval uses binary accuracy for consistency) ---
+reward:
+  format: 0.5
+  accuracy: 1.0
+  # Valid XML/JSON/schema but over YAML tool budgets: format reward minus this once per trajectory.
+  tool_contract_penalty: 0.2
+
+  # Train-only reward shaping; disabled for evaluation.
+  global_efficiency:
+    enable: false
+    reference: mean            # mean | min
+    round_weight: 0.1
+    tool_weight: 0.1
+    correct_only: true
+
+# --- Dynamic rollout (train-only sampling branch; disabled for eval) ---
+dynamic_rollout:
+  enable: false
+  min_rollouts: 8
+  max_rollouts: 10
+  signal_threshold: 0.7
+  completion_ratio_threshold: 0.99
+  selection_strategy: reward_behavior_diverse
+  use_full_rollouts_for_advantage: false
+
+# --- DAPO horizontal group sampling (train-only; disabled for eval) ---
+dapo_sampling:
+  enable: false
+  target_batch_size: 32
+  multiplier: 3.0
+  reward_std_threshold: 1.0e-6
+  signal_source: reward
+  final_selection_strategy: first
+
+# Legacy rejection sampling remains off when using eval.
+rejection_sample:
+  enable: false
+  multiplier: 1.0
+
+# --- Stepwise advantage (train only; disabled for eval) ---
+stepwise_advantage:
+  enable: false
+  mode: broadcast
+  normalize_by_steps: false
+
+# --- Mastered sample filter (train only) ---
+mastered_sample_filter:
+  enable: false
+  early_stop_when_insufficient: true
+  min_active_samples: null
+  log_freq: 1
+  resume_with_mastered_state: true

@@ -1,0 +1,27 @@
+# Private scripts and internal documentation (preserved locally).
+/my_script/
+/docs/
+
+# Local service credentials. Keep only public templates.
+.env
+.env.*
+!.env.example
+
+# User-specific experiment copies (may include private endpoints).
+/rllm/simple_agentic_search/config/local/
+*.local.yaml
+*.local.yml
+
+# Downloaded data/weights and generated artifacts.
+/data/
+/checkpoints/
+/rllm/checkpoints/
+/ms-swift/checkpoints/
+/rllm/simple_agentic_search/cache/
+/rllm/outputs/
+/rllm/multirun/
+wandb/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/

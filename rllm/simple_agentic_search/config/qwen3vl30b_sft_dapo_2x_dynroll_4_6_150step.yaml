@@ -1,0 +1,243 @@
+# ============================================================
+# Experiment config: 30B-A3B MoE DAPO + dynamic rollout, single-node 8x H200 training
+#
+#   NNODES=1 bash simple_agentic_search/run/run_multi_node.sh simple_agentic_search/config/qwen3vl30b_sft_dapo_2x_dynroll_4_6_150step.yaml
+# ============================================================
+
+# --- Experiment metadata ---
+project_name: train_simplesearch_vl
+exp_name: qwen3vl30b_sft_dapo_2x_dynroll_4_6_150step
+model_path: ""  # Required: your SFT checkpoint directory or original Qwen3-VL model ID/path.
+
+# --- Data ---
+train_data:
+  - ../data/SimpleSearch-VL/SimpleSearch-VL-RL-2K/train.jsonl
+# Full validation files; no unreleased *_100.jsonl subsets are assumed.
+# Use explicit local subsets if you need cheaper validation.
+test_data:
+  - ../data/SimpleSearch-VL/Evaluation/mmsearch_end2end_only_image/mmsearch_end2end_only_image.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/browsecomp_vl/browsecomp_vl.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/mmsearch_plus/mmsearch_plus.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/fvqa_test/fvqa_test.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/livevqa_research_preview/livevqa_research_preview.jsonl
+  - ../data/SimpleSearch-VL/Evaluation/simplevqa_en/simplevqa_en.jsonl
+
+# --- Mode ---
+mode: train            # train | eval
+rollout_mode: async    # async | sync
+rollout_name: sglang
+
+# --- Algorithm ---
+dtype: bfloat16
+adv_estimator: rloo
+kl_coef: 0.001
+use_kl_loss: false
+kl_loss_coef: 0.001
+clip_ratio_high: 0.28
+loss_agg_mode: seq-mean-token-sum
+
+# --- Batch (base values per node, run_multi_node.sh scales by NNODES) ---
+train_prompt_bsz: 64
+val_batch_size: 2048
+n_resp_per_prompt: 4
+train_prompt_mini_bsz: 64
+n_parallel_tasks: 64
+n_parallel_tools: 128
+
+# --- Length ---
+max_prompt_length: 4096
+max_response_length: 64000
+use_dynamic_bsz: true
+actor_ppo_max_token_len_per_gpu: 70000
+infer_ppo_max_token_len_per_gpu: 70000
+
+# --- Parallel / offload ---
+# 1 node * 8 GPUs = 8 world_size. EP4 * ETP1 * PP2 fits Megatron expert/tensor/pipeline groups.
+# offload + optimizer CPU offload are required for 30B-A3B; without them the
+# optimizer state alone blows past H200 HBM.
+offload: true
+gen_tp: 4
+train_tp: 4
+train_pp: 2
+train_ep: 4   # from 8 -> 4 for single 8-GPU H200 node
+train_etp: 1
+train_cp: 1
+
+# --- 30B-A3B MoE training overrides (consumed by run.sh) ---
+# Matches eval_30B.yaml. Keep gradient_accumulation_fusion off unless APEX
+# CUDA extensions are installed in the runtime environment.
+actor_optim_override:
+  optimizer_offload_fraction: 1
+  overlap_cpu_optimizer_d2h_h2d: true
+  use_precision_aware_optimizer: true
+  optimizer_cpu_offload: true
+
+actor_megatron_override:
+  moe_router_dtype: fp32
+  gradient_accumulation_fusion: false
+  moe_permute_fusion: true
+  moe_aux_loss_coeff: 0.01
+  moe_z_loss_coeff: 0.001
+
+# --- Sampling (train) ---
+temperature: 0.7
+top_p: 0.95
+top_k: -1
+presence_penalty: 0.2
+repetition_penalty: 1.05
+
+# --- Sampling (val) ---
+val_temperature: 0.0
+val_top_p: 1.0
+val_top_k: -1
+val_presence_penalty: 0.0
+val_repetition_penalty: 1.0
+
+# --- Trainer ---
+total_epochs: 9999
+total_training_steps: 150
+save_freq: 10
+test_freq: 10
+val_before_train: false
+n_gpus_per_node: 8
+nnodes: 1   # placeholder; actual value comes from NNODES env (run_multi_node.sh overrides trainer.nnodes)
+logger: '["console", "wandb"]'
+
+# --- Rollout engine ---
+gpu_memory_utilization: 0.50
+enforce_eager: false
+
+# --- Actor optimizer ---
+# Warm up for 5% of total_training_steps, then cosine decay to 10% of the initial LR.
+lr: 1.0e-6
+lr_warmup_steps_ratio: 0.05
+lr_decay_style: cosine
+min_lr: 1.0e-7
+
+# --- Agent config ---
+agent_config:
+  max_llm_calls: 10
+  max_repeat_turn: 3
+  tool_max_retries: 3
+  max_prompt_tokens: 64000
+  max_response_tokens: 2048
+  tool_call_timeout: 180
+  llm_call_timeout: 180
+  llm_max_retries: 1
+  agent_run_timeout: 480
+  force_final_answer_timeout: 180
+
+workflow_timeout: 1000
+
+# --- Tools config ---
+tools_config:
+  # Available: text_search, image_search, zoom_in, visit
+  # zoom_in stays disabled by default; add it here to expose cropped images to the model.
+  enabled_tools:
+    - text_search
+    - image_search
+    - visit
+    # - zoom_in
+
+  # Batched tool argument budgets. The harness warns on over-budget calls and
+  # reward.tool_contract_penalty applies a lightweight format penalty.
+  search_max_queries: 3
+  search_max_urls: 5          # displayed results per query
+  search_cache_max_urls: 5    # cached results per query; display is sliced by search_max_urls
+  visit_max_urls: 5
+
+  extract_max_tokens: 1024
+  extract_mode: text           # text | vl
+  api_max_retries: 1
+  visit_max_content_chars: 100000
+  cache_db_path: simple_agentic_search/cache/mars_cache.db
+
+  # Zoom-in is configured but not enabled above by default.
+  zoom_in:
+    max_bboxes: 3
+    padding: [0.2, 0.2]
+
+  # Region/image search config. Offline file cache fields are intentionally omitted.
+  image_search:
+    mode: online               # online only for current harness
+    use_cache: true            # true: SQLite cache first; false: always online/no cache
+    cached_iou_threshold: 0.7
+    max_bboxes: 3              # max bbox regions per image_search call
+    max_search_results: 5      # image search result count shown to the agent
+    use_thumbnails: true      # Include available result thumbnails as visual evidence.
+    # Public default: every worker running this tool can directly access returned
+    # image URLs over HTTP(S). No thumbnail relay service is required.
+    # Read cached thumbnail bytes first; download only missing thumbnails, even
+    # when the region-search results themselves were already cached.
+    # false: use cached thumbnails only; this does NOT make image search offline.
+    # Failed/missing thumbnails are skipped; textual search results are retained.
+    thumbnail_online_download: true
+    thumbnail_download_timeout: 10.0  # HTTP client network timeout, in seconds.
+    thumbnail_max_bytes: 5242880      # 5 MiB; reject larger images AFTER download.
+    # false: direct HTTP(S), without inheriting environment proxy settings.
+    # Restricted networks only: set true to use your own HTTP_PROXY/HTTPS_PROXY
+    # (or ALL_PROXY, with NO_PROXY as needed) on each worker. No automatic relay.
+    # This flag applies only to thumbnail downloads, not other tool/API requests.
+    thumbnail_trust_env: false
+
+# --- Image pixel limits (env vars, read by run.sh) ---
+max_pixels: 2073600
+min_pixels: 65536
+
+# --- Reward config ---
+reward:
+  format: 0.5
+  accuracy: 1.0
+  # Valid XML/JSON/schema but over YAML tool budgets: format reward minus this once per trajectory.
+  tool_contract_penalty: 0.0
+
+  # Optional persistent per-sample efficiency reward. run.sh injects
+  # state_path=${trainer.default_local_dir}/global_efficiency_state.json when enabled.
+  # Only positive bonuses are applied: fewer rounds/tools than the historical
+  # successful reference get rewarded; slower rollouts are not penalized.
+  global_efficiency:
+    enable: false
+    reference: mean            # mean | min
+    round_weight: 0.1
+    tool_weight: 0.1
+
+# --- Dynamic rollout (vertical extra rollouts for the same prompt) ---
+# FAR vertical allocation: expand all-wrong prompt groups from 4 to at most 6 rollouts.
+dynamic_rollout:
+  enable: true
+  min_rollouts: 4
+  max_rollouts: 6
+  signal_threshold: 0.9
+  completion_ratio_threshold: 0.99
+  expansion_policy: expand_only_all_wrong
+  selection_strategy: reward_behavior_diverse
+  use_full_rollouts_for_advantage: true
+
+# --- DAPO horizontal group sampling ---
+# FAR horizontal expansion: oversample prompt groups by 2x before filtering.
+dapo_sampling:
+  enable: true
+  target_batch_size: 64
+  multiplier: 2.0
+  reward_std_threshold: 1.0e-3
+  signal_source: correctness   # correctness or reward
+  final_selection_strategy: first
+
+# Legacy rejection sampling remains off when using dapo_sampling.
+rejection_sample:
+  enable: false
+  multiplier: 1.0
+
+# --- Stepwise advantage (disabled by default) ---
+stepwise_advantage:
+  enable: false
+  mode: broadcast
+  normalize_by_steps: false
+
+# --- Mastered sample filter (train only) ---
+mastered_sample_filter:
+  enable: false
+  early_stop_when_insufficient: true
+  min_active_samples: null
+  log_freq: 1
+  resume_with_mastered_state: true
